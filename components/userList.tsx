@@ -1,10 +1,15 @@
 "use client";
 
 import { User } from "@/src/interfaces/User";
+import { Role } from "@/src/types/Role";
+import { SessionProvider, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function UserList() {
+const UserList = () => {
     const [users, setUser] = useState<User[]>([]);
+    const { data: session } = useSession();
+    const router = useRouter();
 
     useEffect(() => {
         async function fetchUsers() {
@@ -16,10 +21,14 @@ export default function UserList() {
                 console.error("users get error", error);
             }
         }
-
         fetchUsers();
     }, []);
 
+    const handlUser = ({ id }: { id: number }) => {
+
+        router.push(`/users/${id}`);
+        router.refresh();
+    }
 
     return (
         <div className="container mt-4">
@@ -29,11 +38,12 @@ export default function UserList() {
                     <tr>
                         <th scope="col">ID</th>
                         <th scope="col">Email</th>
-                        <th scope="col">Password</th>
                         <th scope="col">First Name</th>
                         <th scope="col">Last Name</th>
                         <th scope="col">Role</th>
-                        <th scope="col">Action</th>
+                        {session?.user.role === Role.Admin &&
+                            <th scope="col">Action</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -41,15 +51,25 @@ export default function UserList() {
                         <tr key={user.id}>
                             <td>{user.id}</td>
                             <td>{user.email}</td>
-                            <td>{user.password}</td>
                             <td>{user.first_name}</td>
                             <td>{user.last_name}</td>
                             <td>{user.role}</td>
-                            <td></td>
+                            {session?.user.role === Role.Admin &&
+                                <td><button onClick={() => handlUser({ id: user.id })} className="btn btn-outline-warning">Edit</button></td>
+                            }
                         </tr>
                     ))}
                 </tbody>
             </table>
         </div>
+    );
+}
+
+
+export default function List() {
+    return (
+        <SessionProvider>
+            <UserList />
+        </SessionProvider>
     );
 }
